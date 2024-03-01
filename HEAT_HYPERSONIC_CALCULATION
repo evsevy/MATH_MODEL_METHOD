@@ -1,0 +1,53 @@
+/******************************************************************************
+пример кода создание класса расчета нагрева материала температура при достижении 
+гиперзвуковых режимов скорости в атмосфере с конструктором и методами, 
+созданием обьекта класса пример кода С++ с комментариями.
+Этот код создает класс HeatingCalculator для расчета нагрева материала и 
+проверки достижения гиперзвуковых режимов скорости в атмосфере. 
+В конструкторе класса инициализируются начальная температура материала и скорость звука, 
+а также реализованы методы для увеличения температуры, проверки условий гиперзвукового режима 
+и вывода текущей температуры.
+В функции main() создается объект класса HeatingCalculator, 
+вызываются методы для увеличения температуры материала, вывода текущей температуры 
+и проверки условий гиперзвукового режима. Меркулов Е. В. LTD  ⓒ
+*******************************************************************************/
+#include <iostream>
+
+class HeatingCalculator {
+private:
+    double materialTemperature;
+    double speedOfSound;
+
+public:
+    HeatingCalculator(double initialTemperature, double initialSpeed) {
+        materialTemperature = initialTemperature;
+        speedOfSound = initialSpeed;
+    }
+
+    void increaseTemperature(double heatInput) {
+        materialTemperature += heatInput;
+    }
+
+    void checkHyperSonicConditions() {
+        if (speedOfSound > 343) { // гиперзвуковая скорость в атмосфере
+            std::cout << "Гиперзвуковой режим скорости достигнут" << std::endl;
+        } else {
+            std::cout << "Гиперзвуковой режим скорости не достигнут" << std::endl;
+        }
+    }
+
+    void printMaterialTemperature() {
+        std::cout << "Температура материала: " << materialTemperature << std::endl;
+    }
+};
+
+int main() {
+    HeatingCalculator calc(200, 350); // создание объекта класса HeatingCalculator с начальной температурой 20.0 и начальной скоростью звука 350 м/с
+
+    calc.increaseTemperature(50.0); // увеличиваем температуру на 50 градусов
+    calc.printMaterialTemperature(); // выводим текущую температуру материала
+    calc.checkHyperSonicConditions(); // проверяем, достигнут ли гиперзвуковой режим скорости
+
+    return 0;
+}
+
