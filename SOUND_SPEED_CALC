@@ -1,0 +1,190 @@
+}
+
+// Функция для расчета плотности воздуха в зависимости от высоты
+double calculateDensity(double height) {
+    // Ваш код для расчета плотности
+}
+
+// Функция для расчета скорости звука в метрах в секунду
+double calculateSoundSpeed(double height) {
+    // Если высота в пределах тропопаузы, возвращаем константное значение
+    if (height >= TROPOPAUSE_LOWER && height <= TROPOPAUSE_UPPER) {
+        return 343; // Пример значения скорости звука на высоте тропопаузы
+    }
+    // В противном случае, рассчитываем скорость звука на основе плотности и давления
+    double density = calculateDensity(height);
+    return 331 * sqrt(density);
+}
+
+int main() {
+    std::vector<std::thread> threads;
+
+    for (int height = 0; height <= 50000; height += 100) {
+        threads.emplace_back([height]() {
+            double pressure = calculatePressure(height);
+            double density = calculateDensity(height);
+            double soundSpeed = calculateSoundSpeed(height);
+
+            std::cout << "Height: " << height << "m" << std::endl;
+            std::cout << "Pressure: " << pressure << " Pa" << std::endl;
+            std::cout << "Density: " << density << " kg/m^3" << std::endl;
+            std::cout << "Sound Speed: " << soundSpeed << " m/s (" << soundSpeed * 3.6 << " km/h)" << std::endl;
+            std::cout << std::endl;
+        });
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    return 0;
+}
+
+
+//Этот код создает несколько потоков для расчета скорости звука 
+//на различных высотах с использованием функций для расчета давления и плотности воздуха. 
+//Результаты выводятся параллельно столбиком с использованием потоков, и добавлена задержка с помощью таймера. 
+
+#include <iostream>
+#include <vector>
+#include <omp.h>
+#include <cmath>
+#include <chrono>
+#include <thread>
+
+
+// Функция для расчета давления воздуха в зависимости от высоты
+double calculatePressure(double height) {
+    // Здесь можно добавить формулу для расчета давления
+    return 101.3 * exp(-0.0001 * height);
+}
+
+// Функция для расчета плотности воздуха в зависимости от высоты
+double calculateDensity(double height) {
+    // Здесь можно добавить формулу для расчета плотности
+    return 1.225 * exp(-0.0001 * height);
+}
+
+int main() {
+    std::vector<double> heights;
+    std::vector<double> pressures;
+    std::vector<double> densities;
+    std::vector<double> soundSpeeds;
+
+    // Заполнение массивов высот
+    for (int h = 0; h <= 50000; h += 100) {
+        heights.push_back(h);
+    }
+
+    // Параллельный расчет давления, плотности и скорости звука
+    #pragma omp parallel for
+    for (int i = 0; i < heights.size(); i++) {
+        double height = heights[i];
+        double pressure = calculatePressure(height);
+        double density = calculateDensity(height);
+        double soundSpeed = (height >= 8000 && height <= 11000) ? 343 : sqrt(1.4 * 287 * temperature);
+
+        #pragma omp critical
+        {
+            pressures.push_back(pressure);
+            densities.push_back(density);
+            soundSpeeds.push_back(soundSpeed);
+        }
+    }
+
+    // Вывод результатов параллельными столбиками с таймером задержки
+    for (int i = 0; i < heights.size(); i++) {
+        std::cout << "Height: " << heights[i] << " m" << std::endl;
+        std::cout << "Pressure: " << pressures[i] << " Pa" << std::endl;
+        std::cout << "Density: " << densities[i] << " kg/m^3" << std::endl;
+        std::cout << "Sound Speed: " << soundSpeeds[i] << " m/s (" << soundSpeeds[i] * 3.6 << " km/h)" << std::endl;
+        std::cout << std::endl;
+
+        // Добавим задержку в 1 секунду
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+
+    return 0;
+}
+*/
+
+/*
+расчет скорости звука на высотах от 0 до 50000 метров в зависимости от плотности и давления атмосферы  с шагом 300 метров 
+в двух пяти threads массивах <vector>и параллельном выводе столбиком высота в метрах, давление воздуха, плотность воздуха, 
+скорость звука в метрах в секунду и в километрах в час, с учетом, что скорость звука в пределах тропопаузы 8000-11000 метров не изменяется,  
+есть функции для расчета давления и плотности воздуха в зависимости от высоты.
+
+*/
+
+#include <iostream>
+#include <vector>
+#include <thread>
+#include <mutex>
+#include <cmath>
+
+// Глобальные константы
+const double SOUND_SPEED_TROPOPAUSE = 343.21; // скорость звука в тропопаузе в м/с
+const double PRESSURE_SEA_LEVEL = 101325; // давление на уровне моря в Па
+const double DENSITY_SEA_LEVEL = 1.225; // плотность воздуха на уровне моря в кг/м^3
+
+// Функция для расчета давления воздуха в зависимости от высоты
+double calculatePressure(double height) {
+    return PRESSURE_SEA_LEVEL * pow(1 - 2.25577e-5 * height, 5.25588);
+}
+
+// Функция для расчета плотности воздуха в зависимости от высоты
+double calculateDensity(double height) {
+    return DENSITY_SEA_LEVEL * pow(1 - 2.25577e-5 * height, 4.25588);
+}
+
+// Функция для относительного расчета скорости звука в зависимости от высоты
+double calculateSoundSpeed(double height) {
+    if (height >= 8000 && height <= 11000) {
+        return SOUND_SPEED_TROPOPAUSE;
+    } else {
+        double pressure = calculatePressure(height);
+        double density = calculateDensity(height);
+        return sqrt(1.4 * pressure / density);
+    }
+}
+
+int main() {
+    std::vector<double> heights;
+    std::vector<double> pressures;
+    std::vector<double> densities;
+    std::vector<double> soundSpeeds;
+
+    // Создаем потоки для параллельных вычислений
+    std::mutex mtx;
+    std::vector<std::thread> threads;
+
+    for (int height = 0; height <= 40000; height += 300) {
+        threads.push_back(std::thread([&, height]() {
+            double pressure = calculatePressure(height);
+            double density = calculateDensity(height);
+            double soundSpeed = calculateSoundSpeed(height);
+
+            // Захватываем мьютекс для безопасного доступа к векторам
+            std::lock_guard<std::mutex> guard(mtx);
+            heights.push_back(height);
+            pressures.push_back(pressure);
+            densities.push_back(density);
+            soundSpeeds.push_back(soundSpeed);
+        }));
+    }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    // Параллельный вывод результатов
+    for (int i = 0; i < heights.size(); ++i) {
+        std::cout << "Высота: " << heights[i] << " м" << std::endl;
+        std::cout << "Давление воздуха: " << pressures[i] << " Па" << std::endl;
+        std::cout << "Плотность воздуха: " << densities[i] << " кг/м^3" << std::endl;
+        std::cout << "Скорость звука: " << soundSpeeds[i] << " м/c (" << soundSpeeds[i] * 3.6 << " км/ч)" << std::endl;
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
