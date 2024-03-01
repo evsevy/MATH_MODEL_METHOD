@@ -1,0 +1,192 @@
+
+/******************************************************************************
+
+Математическое моделирование численных методов вычисления гиперзвуковых режимов 
+на разных уровнях (слоях) атмосферы.
+
+*******************************************************************************/
+#include <iostream>
+#include <thread>
+#include <vector>
+#include <cstdlib>
+#include <ctime>
+
+class HypersonicModel {
+public:
+    HypersonicModel() {
+        std::cout << "Hypersonic model created" << std::endl;
+    }
+
+    void simulate(int startAltitude, int endAltitude) {
+        std::cout << "Simulation started" << std::endl;
+
+        std::vector<std::thread> threads;
+
+        for (int i = startAltitude; i >= endAltitude; i -= 1000) {
+            threads.push_back(std::thread(&HypersonicModel::calculate, this, i));
+        }
+
+        for (auto& t : threads) {
+            t.join();
+        }
+
+        std::cout << "Simulation completed" << std::endl;
+    }
+
+private:
+    double calculate(int altitude) {
+        // Perform complex calculations here based on altitude, pressure, temperature, humidity
+        /*
+        
+//One example of a complex calculation based on altitude, pressure, temperature, and humidity is calculating the density of air at a specific altitude.
+
+To do this calculation, we first need to calculate the actual vapor pressure of water in the air using the temperature and humidity. 
+This can be done using the formula:
+
+e = 6.112 * exp((17.67 * T) / (T + 243.5)) * RH / 100
+
+Where:
+- e is the vapor pressure in millibars
+- T is the temperature in degrees Celsius
+- RH is the relative humidity as a percentage
+
+Next, we can calculate the saturated vapor pressure of water in the air at the given temperature using the formula:
+
+es = 6.112 * exp((17.67 * T) / (T + 243.5))
+
+Then, we can calculate the actual pressure of dry air at the given altitude using the standard atmospheric pressure at sea level (1013.25 hPa) 
+and the barometric formula:
+
+P = P0 * exp((-0.03416 * h)/(T + 273.15))
+
+Where:
+- P is the pressure at the given altitude
+- P0 is the standard atmospheric pressure at sea level
+- h is the altitude in meters
+- T is the temperature in degrees Celsius
+
+Finally, we can calculate the density of moist air at the given altitude using the ideal gas law and the previous calculations:
+
+ρ = (P - e) / (Rd * (T + 273.15))
+
+Where:
+- ρ is the density of air at the given altitude
+- Rd is the specific gas constant for dry air (287 J/(kg*K))
+
+By combining these formulas and inputting the appropriate values for altitude, pressure, temperature, and humidity, 
+we can calculate the density of air at a specific altitude that takes into account the effects of temperature, pressure, and humidity.
+
+#include <iostream>
+#include <cmath>
+
+// Function to calculate air density based on altitude, pressure, temperature, and humidity
+double calculateAirDensity(double altitude, double pressure, double temperature, double humidity) {
+    const double gasConstant = 287.05; // Specific gas constant for dry air in J/kg*K
+    
+    double vaporPressure = 6.11 * pow(10, (7.5 * temperature) / (237.7 + temperature)) * (humidity / 100); // Calculate water vapor pressure
+    double airPressure = pressure - vaporPressure; // Calculate dry air pressure
+    double temperatureKelvin = temperature + 273.15; // Convert temperature to Kelvin
+    
+    double airDensity = (airPressure / (gasConstant * temperatureKelvin)) * (1 + 0.61 * vaporPressure / airPressure); // Calculate air density
+    
+    return airDensity;
+}
+
+int main() {
+    double altitude = 500; // Altitude in meters
+    double pressure = 101325; // Pressure in Pa
+    double temperature = 25; // Temperature in Celsius
+    double humidity = 60; // Humidity in %
+
+    // Calculate air density
+    double airDensity = calculateAirDensity(altitude, pressure, temperature, humidity);
+    
+    std::cout << "Air density at " << altitude << " meters altitude is: " << airDensity << " kg/m^3" << std::endl;
+
+    return 0;
+}
+        
+//**********************************************Navier-Stokes formula*******************************************************************************8
+ #include <iostream>
+#include <vector>
+
+using namespace std;
+
+// Function to calculate the velocity field using the Navier-Stokes formula
+void calculateVelocityField(vector<vector<double>>& u, vector<vector<double>>& v, double dt, double dx, double dy, double viscosity, double density, int steps) {
+    int nx = u.size();
+    int ny = u[0].size();
+
+    vector<vector<double>> u_temp(nx, vector<double>(ny));
+    vector<vector<double>> v_temp(nx, vector<double>(ny));
+
+    for (int n = 0; n < steps; n++) {
+        // Calculate velocity at each grid point
+        for (int i = 1; i < nx - 1; i++) {
+            for (int j = 1; j < ny - 1; j++) {
+                double du_dx = (u[i + 1][j] - u[i - 1][j]) / (2 * dx);
+                double dv_dy = (v[i][j + 1] - v[i][j - 1]) / (2 * dy);
+
+                double laplace_u = (u[i + 1][j] - 2 * u[i][j] + u[i - 1][j]) / (dx * dx) + (u[i][j + 1] - 2 * u[i][j] + u[i][j - 1]) / (dy * dy);
+                double laplace_v = (v[i + 1][j] - 2 * v[i][j] + v[i - 1][j]) / (dx * dx) + (v[i][j + 1] - 2 * v[i][j] + v[i][j - 1]) / (dy * dy);
+
+                u_temp[i][j] = u[i][j] + dt * ((viscosity * laplace_u) - (du_dx * u[i][j]) - (dv_dy * u[i][j])) / density;
+                v_temp[i][j] = v[i][j] + dt * ((viscosity * laplace_v) - (du_dx * v[i][j]) - (dv_dy * v[i][j])) / density;
+            }
+        }
+
+        // Update velocity fields
+        u = u_temp;
+        v = v_temp;
+    }
+}
+
+int main() {
+    int nx = 10;
+    int ny = 10;
+    double dt = 0.01;
+    double dx = 1.0;
+    double dy = 1.0;
+    double viscosity = 0.1;
+    double density = 1.0;
+    int steps = 100;
+
+    // Initialize velocity fields
+    vector<vector<double>> u(nx, vector<double>(ny, 0.0));
+    vector<vector<double>> v(nx, vector<double>(ny, 0.0));
+
+    // Calculate velocity field using the Navier-Stokes formula
+    calculateVelocityField(u, v, dt, dx, dy, viscosity, density, steps);
+
+    // Output the velocity field
+    for (int i = 0; i < nx; i++) {
+        for (int j = 0; j < ny; j++) {
+            cout << "Velocity at grid point (" << i << ", " << j << "): u = " << u[i][j] << ", v = " << v[i][j] << endl;
+        }
+    }
+
+    return 0;
+}
+
+
+        */
+        // Apply Navier-Stokes formula, gas mechanics and aerodynamics formulas, shock wave degree and resistance
+
+        // Generate random heating value for demonstration purposes
+        double heating = rand() % 100 + 1;
+
+        std::cout << "Heating at altitude " << altitude << "m: " << heating << std::endl;
+
+        return heating;
+    }
+};
+
+int main() {
+    srand(time(NULL));
+
+    HypersonicModel model;
+
+    model.simulate(100000, 0);
+
+    return 0;
+}
